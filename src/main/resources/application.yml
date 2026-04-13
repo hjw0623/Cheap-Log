@@ -30,3 +30,8 @@ firebase:
 # Internal API
 internal:
   api-key: ${INTERNAL_API_KEY:}
+
+# Naver Shopping API
+naver:
+  client-id: ${NAVER_CLIENT_ID:}
+  client-secret: ${NAVER_CLIENT_SECRET:}

@@ -6,6 +6,7 @@ import kr.cheaplog.backend.domain.hotdeal.repository.HotdealRepository
 import kr.cheaplog.backend.domain.notification.service.KeywordNotificationService
 import kr.cheaplog.backend.domain.product.entity.Product
 import kr.cheaplog.backend.domain.product.repository.ProductRepository
+import kr.cheaplog.backend.domain.product.service.ProductPriceUpdater
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -17,7 +18,8 @@ class InternalHotdealService(
     private val productRepository: ProductRepository,
     private val categoryClassifier: HotdealCategoryClassifier,
     private val scoreCalculator: HotdealScoreCalculator,
-    private val keywordNotificationService: KeywordNotificationService
+    private val keywordNotificationService: KeywordNotificationService,
+    private val productPriceUpdater: ProductPriceUpdater
 ) {
 
     fun processBatch(request: HotdealBatchRequest): HotdealBatchResponse {
@@ -94,7 +96,10 @@ class InternalHotdealService(
         val existing = productRepository.findByNameContaining(productName)
         if (existing.isNotEmpty()) return existing.first()
 
-        return productRepository.save(Product(name = productName, category = category))
+        val newProduct = productRepository.save(Product(name = productName, category = category))
+        // 신규 상품 생성 시 네이버 최저가 비동기 조회
+        productPriceUpdater.updateNaverPrice(newProduct)
+        return newProduct
     }
 
     private fun parseDateTime(isoString: String): LocalDateTime? {
