@@ -3,6 +3,7 @@ package kr.cheaplog.backend.domain.hotdeal.service
 import kr.cheaplog.backend.domain.hotdeal.dto.*
 import kr.cheaplog.backend.domain.hotdeal.entity.Hotdeal
 import kr.cheaplog.backend.domain.hotdeal.repository.HotdealRepository
+import kr.cheaplog.backend.domain.notification.service.KeywordNotificationService
 import kr.cheaplog.backend.domain.product.entity.Product
 import kr.cheaplog.backend.domain.product.repository.ProductRepository
 import org.springframework.stereotype.Service
@@ -15,13 +16,15 @@ class InternalHotdealService(
     private val hotdealRepository: HotdealRepository,
     private val productRepository: ProductRepository,
     private val categoryClassifier: HotdealCategoryClassifier,
-    private val scoreCalculator: HotdealScoreCalculator
+    private val scoreCalculator: HotdealScoreCalculator,
+    private val keywordNotificationService: KeywordNotificationService
 ) {
 
     fun processBatch(request: HotdealBatchRequest): HotdealBatchResponse {
         var newCount = 0
         var updatedCount = 0
         val results = mutableListOf<HotdealBatchResult>()
+        val newHotdeals = mutableListOf<Hotdeal>()
 
         for (item in request.items) {
             val existing = hotdealRepository.findBySourceAndSourceId(item.source, item.sourceId)
@@ -67,8 +70,14 @@ class InternalHotdealService(
                 hotdeal.updateScore(scoreCalculator.calculate(hotdeal))
 
                 newCount++
+                newHotdeals.add(hotdeal)
                 results.add(HotdealBatchResult(item.sourceId, hotdeal.id, isNew = true))
             }
+        }
+
+        // 신규 핫딜에 대해 키워드 매칭 + FCM 푸시 (비동기)
+        if (newHotdeals.isNotEmpty()) {
+            keywordNotificationService.matchAndNotify(newHotdeals)
         }
 
         return HotdealBatchResponse(
