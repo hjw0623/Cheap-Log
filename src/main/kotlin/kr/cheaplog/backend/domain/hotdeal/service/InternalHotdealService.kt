@@ -14,7 +14,8 @@ import java.time.LocalDateTime
 class InternalHotdealService(
     private val hotdealRepository: HotdealRepository,
     private val productRepository: ProductRepository,
-    private val categoryClassifier: HotdealCategoryClassifier
+    private val categoryClassifier: HotdealCategoryClassifier,
+    private val scoreCalculator: HotdealScoreCalculator
 ) {
 
     fun processBatch(request: HotdealBatchRequest): HotdealBatchResponse {
@@ -35,6 +36,7 @@ class InternalHotdealService(
                     isHot = item.isHot,
                     isExpired = item.isExpired
                 )
+                hotdeal.updateScore(scoreCalculator.calculate(hotdeal))
                 updatedCount++
                 results.add(HotdealBatchResult(item.sourceId, hotdeal.id, isNew = false))
             } else {
@@ -62,6 +64,7 @@ class InternalHotdealService(
                     )
                 )
                 product?.let { hotdeal.linkProduct(it) }
+                hotdeal.updateScore(scoreCalculator.calculate(hotdeal))
 
                 newCount++
                 results.add(HotdealBatchResult(item.sourceId, hotdeal.id, isNew = true))
