@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: cheaplog-backend
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/cheaplog?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    open-in-view: false
+
+  jackson:
+    time-zone: Asia/Seoul
+
+server:
+  port: 8080
+
+# Firebase
+firebase:
+  credentials-path: ${FIREBASE_CREDENTIALS_PATH:firebase-service-account.json}
+
+# Internal API
+internal:
+  api-key: ${INTERNAL_API_KEY:}
